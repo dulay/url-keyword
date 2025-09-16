@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="UTF-8">
+  <title>核查结果 - 邢台网安关键词核查系统</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      background: url('https://wa.gaj.xingtai.gov.cn/static/png/log_banner2.2800dce2.png') center/cover no-repeat, #f5f8fb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .main-box {
+      width: 100%;
+      max-width: 1100px;
+      margin: 40px auto;
+      background: rgba(255,255,255,0.96);
+      border-radius: 16px;
+      box-shadow: 0 4px 32px 0 rgba(50,65,90,0.10), 0 1.5px 4px 0 rgba(50,80,180,0.06);
+      padding: 2rem;
+      backdrop-filter: blur(2px);
+    }
+    .brand {
+      font-weight: 700;
+      font-size: 2rem;
+      color: #345073;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      letter-spacing:2px;
+    }
+    .btn-primary, .btn-info, .btn-success, .btn-secondary {
+      border-radius: 24px;
+      font-weight: 500;
+      padding: 0.4rem 1.2rem;
+      font-size: 1rem;
+      box-shadow: 0 1px 4px rgba(60,80,180,0.07);
+      transition: all .2s;
+      border: none;
+    }
+    .btn-success {
+      background: linear-gradient(90deg, #4db98a 0%, #8ac5b6 100%);
+    }
+    .btn-info {
+      background: linear-gradient(90deg, #6cbaff 0%, #456b96 100%);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #f8f9fa;
+      color: #345073;
+    }
+    .table {
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 0;
+    }
+    .table th, .table td {
+      vertical-align: middle !important;
+      font-size: 1rem;
+      border-color: #e9ecef;
+      background: transparent;
+    }
+    .table thead th {
+      background: #f1f5fa;
+      color: #345073;
+      font-weight: 600;
+      border-bottom-width: 2px;
+      border-top: none;
+    }
+    .progress {
+      background: #e3eaf6;
+      border-radius: 12px;
+      height: 26px;
+    }
+    .progress-bar {
+      border-radius: 12px;
+      background: linear-gradient(90deg, #456b96 0%, #7fa3c7 100%);
+      font-weight: 500;
+      font-size: 1.1rem;
+      color: #fff;
+    }
+    .scroll-table {
+      max-height: 480px;
+      overflow: auto;
+    }
+    .mb-2 span, .mb-2 .text-success, .mb-2 .text-danger, .mb-2 .text-secondary {
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+    .chain-view {
+      display: none;
+      background: #f8fafd;
+      border-radius: 6px;
+      border: 1px solid #e2e6ef;
+      padding: 8px;
+      margin-top: 4px;
+      max-width: 420px;
+      font-size: 0.96rem;
+    }
+    @media (max-width: 700px) {
+      .main-box { padding: 1rem 0.2rem; }
+      .brand { font-size: 1.1rem; }
+      .table th, .table td { font-size: 0.95rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-box">
+    <div class="brand">核查结果</div>
+    <div class="mb-2 text-center">
+      <span class="me-2">总数：{{ counts.total }}</span>
+      <span class="me-2 text-success">仍存在：{{ counts.exist }}</span>
+      <span class="me-2 text-danger">已删除：{{ counts.del }}</span>
+      <span class="me-2 text-secondary">核查失败：{{ counts.fail }}</span>
+    </div>
+    <div class="mb-3 text-center">
+      <a class="btn btn-success btn-sm" href="/download/result/{{ task_id }}">下载结果Excel</a>
+      <a class="btn btn-info btn-sm" href="/share/{{ task_id }}">分享结果链接</a>
+    </div>
+    <div class="mb-4">
+      <label>任务状态：<span id="status-text">{{ status }}</span></label>
+      <div class="progress" style="width:220px;display:inline-block;vertical-align:middle;margin-left:24px;">
+        <div id="progbar" class="progress-bar progress-bar-striped" role="progressbar" style="width: {{progress}}%;">{{progress}}%</div>
+      </div>
+    </div>
+    <div class="mb-3" id="progress-detail-bar" style="font-size:1rem;">
+      <b>当前核查：</b>
+      <span id="current-url"></span>
+      <span id="current-http"></span>
+      <span id="current-result"></span>
+    </div>
+    <div class="scroll-table mb-4">
+      <table class="table table-bordered table-sm">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>URL</th>
+            <th>标题</th>
+            <th>状态码</th>
+            <th>核查结果</th>
+            <th>匹配详情</th>
+            <th>跳转类型</th>
+            <th>页面大小</th>
+            <th>跳转链</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td style="word-break:break-all;max-width:300px;">
+              <a href="{{ row.url }}" target="_blank">{{ row.url }}</a>
+            </td>
+            <td style="max-width:180px;">{{ row.title }}</td>
+            <td>{{ row.http_code }}</td>
+            <td>
+              {% if row.result == "仍存在" %}
+                <span class="text-success">{{ row.result }}</span>
+              {% elif row.result == "已删除" %}
+                <span class="text-danger">{{ row.result }}</span>
+              {% else %}
+                <span class="text-secondary">{{ row.result }}</span>
+              {% endif %}
+            </td>
+            <td style="max-width:220px;word-break:break-all;">{{ row.match_info }}</td>
+            <td>{{ row.final_redirect_type }}</td>
+            <td>{{ row.page_size|default('-') }}</td>
+            <td>
+              {% if row.redirect_chain and row.redirect_chain|length > 1 %}
+                <a href="#" class="btn-link" onclick="toggleChain('chain{{loop.index}}');return false;">查看</a>
+                <div id="chain{{loop.index}}" class="chain-view">
+                  {% for step in row.redirect_chain %}
+                    <div style="margin-bottom:2px;">
+                      <span style="color:#345073">{{ step.url }}</span><br>
+                      类型: {{ step.type }}，大小: {{ step.size }}
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}-{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="text-end">
+      <a class="btn btn-secondary" href="/tasks">返回历史任务</a>
+    </div>
+  </div>
+  <script>
+    function checkProgress() {
+      fetch('/progress/{{ task_id }}')
+      .then(resp => resp.json())
+      .then(data => {
+        let bar = document.getElementById('progbar');
+        let statusText = document.getElementById('status-text');
+        if(bar && statusText) {
+          bar.style.width = data.progress + '%';
+          bar.textContent = data.progress + '%';
+          statusText.textContent = data.status;
+        }
+        if(data.status === '核查中' && data.progress < 100) {
+          setTimeout(checkProgress, 2000);
+        } else if(data.status === '已完成') {
+          bar.classList.add('bg-success');
+        } else if(data.status === '失败') {
+          bar.classList.add('bg-danger');
+        }
+      });
+    }
+    checkProgress();
+
+    function updateProgressDetail() {
+      fetch("/progress/{{ task_id }}")
+        .then(resp => resp.json())
+        .then(data => {
+          if (data && data.current) {
+            document.getElementById('current-url').textContent = "URL: " + data.current + " ";
+            document.getElementById('current-http').textContent = "HTTP: " + (data.http_code || '') + " ";
+            document.getElementById('current-result').textContent = "结果: " + (data.result || '');
+          } else {
+            document.getElementById('current-url').textContent = "";
+            document.getElementById('current-http').textContent = "";
+            document.getElementById('current-result').textContent = "";
+          }
+          setTimeout(updateProgressDetail, 2000);
+        });
+    }
+    updateProgressDetail();
+
+    function toggleChain(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = (el.style.display === "none" ? "" : "none");
+    }
+  </script>
+</body>
+</html>

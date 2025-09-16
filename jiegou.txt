@@ -1,0 +1,24 @@
+├── app.py
+├── Dockerfile
+├── init_csv.py
+├── README.md
+├── requirements.txt
+├── results
+├── tasks.csv
+├── templates
+│   ├── admin.html
+│   ├── index.html
+│   ├── login.html
+│   ├── profile.html
+│   ├── register.html
+│   ├── result.html
+│   └── tasks.html
+├── uploads
+│   └── template.xlsx
+├── users.csv
+└── utils
+    ├── crawler.py
+    ├── excel_utils.py
+    ├── security.py
+    └── user_mgmt.py
+

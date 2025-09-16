@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="UTF-8">
+  <title>历史任务 - 邢台网安关键词核查系统</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      background: url('https://wa.gaj.xingtai.gov.cn/static/png/log_banner2.2800dce2.png') center/cover no-repeat, #f5f8fb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .main-box {
+      width: 100%;
+      max-width: 900px;
+      margin: 40px auto;
+      background: rgba(255,255,255,0.96);
+      border-radius: 16px;
+      box-shadow: 0 4px 32px 0 rgba(50,65,90,0.10), 0 1.5px 4px 0 rgba(50,80,180,0.06);
+      padding: 2.5rem 2rem;
+      backdrop-filter: blur(2px);
+    }
+    .brand {
+      font-weight: 700;
+      font-size: 2rem;
+      color: #345073;
+      margin-bottom: 2rem;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+    .btn-primary, .btn-info, .btn-secondary, .btn-success, .btn-danger {
+      border-radius: 24px;
+      font-weight: 500;
+      padding: 0.4rem 1.2rem;
+      font-size: 1rem;
+      box-shadow: 0 1px 4px rgba(60,80,180,0.07);
+      transition: all .2s;
+      border: none;
+    }
+    .btn-primary {
+      background: linear-gradient(90deg, #456b96 0%, #7fa3c7 100%);
+      color: #fff;
+    }
+    .btn-success {
+      background: linear-gradient(90deg, #4db98a 0%, #8ac5b6 100%);
+      color: #fff;
+    }
+    .btn-info {
+      background: linear-gradient(90deg, #6cbaff 0%, #456b96 100%);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #f8f9fa;
+      color: #345073;
+    }
+    .btn-danger {
+      background: #e76a6a;
+      color: #fff;
+    }
+    .current-progress-info { font-size:12px; color:#888; min-height: 20px; }
+    .table {
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 0;
+    }
+    .table th, .table td {
+      vertical-align: middle !important;
+      font-size: 1rem;
+      border-color: #e9ecef;
+      background: transparent;
+    }
+    .table thead th {
+      background: #f1f5fa;
+      color: #345073;
+      font-weight: 600;
+      border-bottom-width: 2px;
+      border-top: none;
+    }
+    .alert-warning {
+      border-radius: 10px;
+      font-size: 1rem;
+      background: #fff5f5;
+      color: #b04a4a;
+      border: none;
+    }
+    .progress {
+      background: #e3eaf6;
+      border-radius: 12px;
+      height: 22px;
+    }
+    .progress-bar {
+      border-radius: 12px;
+      background: linear-gradient(90deg, #456b96 0%, #7fa3c7 100%);
+      font-weight: 500;
+      font-size: 1rem;
+      color: #fff;
+    }
+    @media (max-width: 700px) {
+      .main-box { padding: 1.5rem 0.3rem; }
+      .brand { font-size: 1.1rem; }
+      .table th, .table td { font-size: 0.95rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-box">
+    <div class="brand">历史任务</div>
+    <div class="mb-3 text-end">
+      <a class="btn btn-primary btn-sm" href="/">返回首页</a>
+      <a class="btn btn-info btn-sm" href="/profile">个人中心</a>
+      <a class="btn btn-secondary btn-sm" href="/logout">退出登录</a>
+    </div>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-warning">{{ messages[0] }}</div>
+      {% endif %}
+    {% endwith %}
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped align-middle">
+        <thead>
+          <tr>
+            <th>任务名称</th>
+            <th>提交时间</th>
+            <th style="width:340px;">进度</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for task in tasks %}
+          <tr>
+            <td>{{ task.name }}</td>
+            <td>{{ task.time }}</td>
+            <td>
+              <div style="width: 320px;">
+                {% if task.status == '核查中' %}
+                <div class="progress mb-1">
+                  <div class="progress-bar" role="progressbar" style="width: {{task.progress}}%;" id="bar-{{task.id}}">
+                    {{task.progress}}%
+                  </div>
+                </div>
+                <div class="current-progress-info" id="current-info-{{task.id}}">
+                  <span class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></span>
+                  正在检测...
+                </div>
+                <div class="current-progress-raw" id="current-raw-{{task.id}}" style="background:#f9f9f9;font-size:11px;color:#999;padding:2px 8px;border-radius:4px;margin-top:2px;word-break:break-all;display:none"></div>
+                {% else %}
+                  {{ task.status }}
+                {% endif %}
+              </div>
+            </td>
+            <td>
+              {% if task.status == '已完成' %}
+              <a class="btn btn-sm btn-primary" href="/result/{{task.id}}">查看</a>
+              <a class="btn btn-sm btn-success" href="/download/result/{{task.id}}">下载</a>
+              {% endif %}
+              <form action="/delete_task/{{task.id}}" method="post" style="display:inline;">
+                <button class="btn btn-sm btn-danger" type="submit" onclick="return confirm('确定要删除任务吗？')">删除</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+  function escapeHtml(str) {
+    if(!str) return '';
+    return str.replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+              .replace(/'/g, "&#039;");
+  }
+  function updateProgressBar(taskId) {
+    fetch('/progress/' + taskId)
+      .then(res => res.json())
+      .then(data => {
+        var bar = document.getElementById('bar-' + taskId);
+        var info = document.getElementById('current-info-' + taskId);
+        var raw = document.getElementById('current-raw-' + taskId);
+        if (data.progress !== undefined && bar) {
+          bar.style.width = data.progress + '%';
+          bar.innerText = data.progress + '%';
+        }
+        if (info) {
+          if(data.status === "已完成" || data.progress === 100){
+            info.innerHTML = "<span style='color:green;'>已完成</span>";
+            if(raw) raw.style.display = "none";
+          } else if(data.status === "失败") {
+            info.innerHTML = "<span style='color:red;'>任务失败</span>";
+            if(raw) raw.style.display = "none";
+          } else if (data.current) {
+            let code = data.http_code ? ("[" + data.http_code + "] ") : "";
+            let result = data.result ? data.result : "";
+            info.innerHTML = '检测: ' + escapeHtml(data.current) + ' ' + escapeHtml(code + result);
+            if(raw) {
+              raw.style.display = "";
+              raw.innerText = "/progress/" + taskId + " 返回: " + JSON.stringify(data);
+            }
+          } else {
+            info.innerHTML = "<span class='spinner-border spinner-border-sm text-secondary' role='status' aria-hidden='true'></span> 正在检测...";
+            if(raw) raw.style.display = "none";
+          }
+        }
+        if(data.status === "核查中" || (data.progress !== undefined && data.progress < 100)){
+          setTimeout(function(){ updateProgressBar(taskId); }, 1500);
+        }
+      }).catch(function(){
+        setTimeout(function(){ updateProgressBar(taskId); }, 2500);
+      });
+  }
+  {% for task in tasks %}
+    {% if task.status == '核查中' %}
+      updateProgressBar('{{task.id}}');
+    {% endif %}
+  {% endfor %}
+  </script>
+</body>
+</html>
