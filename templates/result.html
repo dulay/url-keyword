@@ -84,159 +84,47 @@
       font-size: 1.1rem;
       color: #fff;
     }
-    .scroll-table {
-      max-height: 480px;
-      overflow: auto;
-    }
-    .mb-2 span, .mb-2 .text-success, .mb-2 .text-danger, .mb-2 .text-secondary {
-      font-size: 1.1rem;
-      font-weight: 500;
-    }
-    .chain-view {
-      display: none;
-      background: #f8fafd;
-      border-radius: 6px;
-      border: 1px solid #e2e6ef;
-      padding: 8px;
-      margin-top: 4px;
-      max-width: 420px;
-      font-size: 0.96rem;
-    }
-    @media (max-width: 700px) {
-      .main-box { padding: 1rem 0.2rem; }
-      .brand { font-size: 1.1rem; }
-      .table th, .table td { font-size: 0.95rem; }
-    }
   </style>
 </head>
 <body>
-  <div class="main-box">
-    <div class="brand">核查结果</div>
-    <div class="mb-2 text-center">
-      <span class="me-2">总数：{{ counts.total }}</span>
-      <span class="me-2 text-success">仍存在：{{ counts.exist }}</span>
-      <span class="me-2 text-danger">已删除：{{ counts.del }}</span>
-      <span class="me-2 text-secondary">核查失败：{{ counts.fail }}</span>
-    </div>
-    <div class="mb-3 text-center">
-      <a class="btn btn-success btn-sm" href="/download/result/{{ task_id }}">下载结果Excel</a>
-      <a class="btn btn-info btn-sm" href="/share/{{ task_id }}">分享结果链接</a>
-    </div>
-    <div class="mb-4">
-      <label>任务状态：<span id="status-text">{{ status }}</span></label>
-      <div class="progress" style="width:220px;display:inline-block;vertical-align:middle;margin-left:24px;">
-        <div id="progbar" class="progress-bar progress-bar-striped" role="progressbar" style="width: {{progress}}%;">{{progress}}%</div>
-      </div>
-    </div>
-    <div class="mb-3" id="progress-detail-bar" style="font-size:1rem;">
-      <b>当前核查：</b>
-      <span id="current-url"></span>
-      <span id="current-http"></span>
-      <span id="current-result"></span>
-    </div>
-    <div class="scroll-table mb-4">
-      <table class="table table-bordered table-sm">
-        <thead class="table-light">
-          <tr>
-            <th>#</th>
-            <th>URL</th>
-            <th>标题</th>
-            <th>状态码</th>
-            <th>核查结果</th>
-            <th>匹配详情</th>
-            <th>跳转类型</th>
-            <th>页面大小</th>
-            <th>跳转链</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in rows %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td style="word-break:break-all;max-width:300px;">
-              <a href="{{ row.url }}" target="_blank">{{ row.url }}</a>
-            </td>
-            <td style="max-width:180px;">{{ row.title }}</td>
-            <td>{{ row.http_code }}</td>
-            <td>
-              {% if row.result == "仍存在" %}
-                <span class="text-success">{{ row.result }}</span>
-              {% elif row.result == "已删除" %}
-                <span class="text-danger">{{ row.result }}</span>
-              {% else %}
-                <span class="text-secondary">{{ row.result }}</span>
-              {% endif %}
-            </td>
-            <td style="max-width:220px;word-break:break-all;">{{ row.match_info }}</td>
-            <td>{{ row.final_redirect_type }}</td>
-            <td>{{ row.page_size|default('-') }}</td>
-            <td>
-              {% if row.redirect_chain and row.redirect_chain|length > 1 %}
-                <a href="#" class="btn-link" onclick="toggleChain('chain{{loop.index}}');return false;">查看</a>
-                <div id="chain{{loop.index}}" class="chain-view">
-                  {% for step in row.redirect_chain %}
-                    <div style="margin-bottom:2px;">
-                      <span style="color:#345073">{{ step.url }}</span><br>
-                      类型: {{ step.type }}，大小: {{ step.size }}
-                    </div>
-                  {% endfor %}
-                </div>
-              {% else %}-{% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div class="text-end">
-      <a class="btn btn-secondary" href="/tasks">返回历史任务</a>
-    </div>
+<div class="main-box">
+  <div class="brand">任务结果</div>
+  <div class="mb-3">
+    <span><b>来源:</b> {{ jump_type }}</span>
+    <span class="ms-3"><b>结果文件大小:</b> {{ '%.2f' % (file_size/1024) }} KB</span>
   </div>
-  <script>
-    function checkProgress() {
-      fetch('/progress/{{ task_id }}')
-      .then(resp => resp.json())
-      .then(data => {
-        let bar = document.getElementById('progbar');
-        let statusText = document.getElementById('status-text');
-        if(bar && statusText) {
-          bar.style.width = data.progress + '%';
-          bar.textContent = data.progress + '%';
-          statusText.textContent = data.status;
-        }
-        if(data.status === '核查中' && data.progress < 100) {
-          setTimeout(checkProgress, 2000);
-        } else if(data.status === '已完成') {
-          bar.classList.add('bg-success');
-        } else if(data.status === '失败') {
-          bar.classList.add('bg-danger');
-        }
-      });
-    }
-    checkProgress();
-
-    function updateProgressDetail() {
-      fetch("/progress/{{ task_id }}")
-        .then(resp => resp.json())
-        .then(data => {
-          if (data && data.current) {
-            document.getElementById('current-url').textContent = "URL: " + data.current + " ";
-            document.getElementById('current-http').textContent = "HTTP: " + (data.http_code || '') + " ";
-            document.getElementById('current-result').textContent = "结果: " + (data.result || '');
-          } else {
-            document.getElementById('current-url').textContent = "";
-            document.getElementById('current-http').textContent = "";
-            document.getElementById('current-result').textContent = "";
-          }
-          setTimeout(updateProgressDetail, 2000);
-        });
-    }
-    updateProgressDetail();
-
-    function toggleChain(id) {
-      var el = document.getElementById(id);
-      if (el) el.style.display = (el.style.display === "none" ? "" : "none");
-    }
-  </script>
+  <div>
+    <span>总数: {{ counts.total }}</span>
+    <span class="ms-3 text-success">仍存在: {{ counts.exist }}</span>
+    <span class="ms-3 text-danger">已删除: {{ counts.del }}</span>
+    <span class="ms-3 text-warning">核查失败: {{ counts.fail }}</span>
+  </div>
+  <div class="my-3">
+    <span>进度: {{ progress }}%</span>
+    <span class="ms-3">状态: {{ status }}</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle">
+      <thead class="table-light">
+        <tr>
+          {% for col in columns %}
+            <th>{{ col }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            {% for col in columns %}
+              <td>{{ row.get(col, '') }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <a href="{{ url_for('tasks') }}" class="btn btn-secondary mt-3">返回任务列表</a>
+  <a href="{{ url_for('download_result', task_id=task_id) }}" class="btn btn-primary ms-3 mt-3">下载结果</a>
+</div>
 </body>
 </html>
